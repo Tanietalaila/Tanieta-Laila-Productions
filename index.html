@@ -22,11 +22,17 @@ img{display:block;max-width:100%}
 .nav-links{display:flex;gap:2.8rem;list-style:none}
 .nav-links a{font-family:'Courier Prime',monospace;font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:#1C1208;cursor:pointer;padding-bottom:2px;border-bottom:1px solid transparent;transition:color .25s,border-color .25s}
 .nav-links a:hover,.nav-links a.active{color:#1C1208;border-bottom-color:#1C1208}
+.nav-social{display:flex;align-items:center;gap:2rem}
+.nav-icon{display:flex;align-items:center;color:#1C1208;transition:opacity .2s}
+.nav-icon:hover{opacity:.55}
+.nav-icon svg{display:block}
+.nav-web{font-family:'Courier Prime',monospace;font-size:.55rem;letter-spacing:.18em;text-transform:lowercase;color:#1C1208;text-decoration:none;border-bottom:1px solid transparent;transition:border-color .2s}
+.nav-web:hover{border-bottom-color:#1C1208}
 
 /* ===== HERO BANNER ===== */
 .hero{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:5rem 3rem;background:#FFFFFF;border-bottom:1px solid rgba(28,18,8,.1);min-height:260px}
-.hero-title{font-family:'Cormorant SC',serif;font-weight:600;font-size:clamp(1.6rem,3.5vw,3.4rem);letter-spacing:.28em;color:#1C1208;text-transform:uppercase;line-height:1.25;margin-bottom:1.1rem}
-.hero-sub{font-family:'Courier Prime',monospace;font-size:.6rem;letter-spacing:.38em;text-transform:uppercase;color:rgba(28,18,8,.42)}
+.hero-title{font-family:'Cormorant SC',serif;font-weight:600;font-size:clamp(1.2rem,2.6vw,2.6rem);letter-spacing:.28em;color:#1C1208;text-transform:uppercase;line-height:1.25;margin-bottom:1rem}
+.hero-sub{font-family:'Courier Prime',monospace;font-size:.72rem;letter-spacing:.32em;text-transform:uppercase;color:rgba(28,18,8,.42)}
 
 /* ===== GALLERY ===== */
 .gallery-section{padding:2.8rem 3rem 0}
@@ -34,7 +40,7 @@ img{display:block;max-width:100%}
 .gallery-item{aspect-ratio:2/3;position:relative;overflow:hidden}
 .gallery-item img{width:100%;height:100%;object-fit:cover;transition:filter .5s ease,opacity .5s ease,transform .55s ease}
 .gallery-item:hover img{filter:grayscale(100%);opacity:.38;transform:scale(1.04)}
-.g-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;opacity:0;transition:opacity .45s ease;pointer-events:none;background:rgba(255,255,255,.93)}
+.g-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem;opacity:0;transition:opacity .45s ease;pointer-events:none;background:rgba(255,255,255,.68)}
 .gallery-item:hover .g-overlay{opacity:1;pointer-events:auto}
 .ov-name{font-family:'Cormorant SC',serif;font-weight:600;font-size:.72rem;letter-spacing:.22em;color:#1C1208;text-transform:uppercase;text-align:center;margin-bottom:.55rem}
 .ov-line{width:1.8rem;height:1px;background:rgba(28,18,8,.2);margin-bottom:.55rem}
@@ -100,34 +106,27 @@ img{display:block;max-width:100%}
 <!-- ========= NAV ========= -->
 <nav class="nav" id="main-nav">
   <span class="nav-brand" onclick="showPage('gallery')">Tanieta Laila Productions</span>
-  <ul class="nav-links">
-    <li><a id="lnk-curation" onclick="showPage('contact')">Event Curation</a></li>
-    <li><a id="lnk-portfolio" class="active" onclick="showPage('gallery')">Portfolio</a></li>
-  </ul>
+  <div class="nav-social">
+    <a class="nav-icon" href="https://www.instagram.com/tanieta.laila" target="_blank" rel="noopener" aria-label="Instagram">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+      </svg>
+    </a>
+    <a class="nav-web" href="https://tanietalaila.com" target="_blank" rel="noopener">tanietalaila.com</a>
+    <a id="lnk-portfolio" class="active" style="font-family:'Courier Prime',monospace;font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:#1C1208;cursor:pointer;padding-bottom:2px;border-bottom:1px solid #1C1208;text-decoration:none" onclick="showPage('gallery')">Portfolio</a>
+  </div>
 </nav>
 
 <!-- ========= PAGE: GALLERY ========= -->
 <div id="pg-gallery">
   <section class="hero">
-    <h1 class="hero-title">Tanieta &#8212; Event Production</h1>
-    <p class="hero-sub">Production &nbsp;&nbsp; Floristry &nbsp;&nbsp; Chef</p>
+    <h1 class="hero-title">Portfolio &#8212; Selected Works</h1>
+    <p class="hero-sub">Event Production &nbsp;&nbsp;&middot;&nbsp;&nbsp; Tablescaping &nbsp;&nbsp;&middot;&nbsp;&nbsp; Florist &nbsp;&nbsp;&middot;&nbsp;&nbsp; Chef</p>
   </section>
   <section class="gallery-section">
     <div class="gallery-grid" id="gallery-grid"></div>
-  </section>
-  <section class="collab">
-    <div>
-      <span class="collab-lets">Let's</span>
-      <span class="collab-script">Collaborate</span>
-      <div>
-        <div class="ci"><span class="ci-label">Phone</span><span class="ci-val">07780 378049</span></div>
-        <div class="ci"><span class="ci-label">Email</span><span class="ci-val">Ctanieta@icloud.com</span></div>
-        <div class="ci"><span class="ci-label">Instagram</span><span class="ci-val">@tanieta_laila</span></div>
-        <div class="ci"><span class="ci-label">Website</span><span class="ci-val">tanietalaila.com</span></div>
-      </div>
-      <button class="collab-btn" onclick="showPage('contact')">I&#x27;d Love to Hear From You</button>
-    </div>
-    <div><div class="collab-img"></div></div>
   </section>
   <footer class="footer">
     <span class="footer-brand">Tanieta Laila Productions</span>
@@ -143,7 +142,6 @@ img{display:block;max-width:100%}
   <div class="event-header">
     <h1 class="event-title" id="ev-title">Event Name</h1>
     <div class="event-meta-row">
-      <div><span class="em-label">Brand</span><span class="em-val" id="ev-brand">—</span></div>
       <div><span class="em-label">Date</span><span class="em-val" id="ev-date">—</span></div>
       <div><span class="em-label">Role</span><span class="em-val" id="ev-role">—</span></div>
     </div>
@@ -241,10 +239,8 @@ function showPage(page) {
     document.getElementById('pg-'+p).style.display = 'none';
   });
   document.getElementById('lnk-portfolio').classList.remove('active');
-  document.getElementById('lnk-curation').classList.remove('active');
   document.getElementById('pg-'+page).style.display = 'block';
   if (page === 'gallery') document.getElementById('lnk-portfolio').classList.add('active');
-  if (page === 'contact') document.getElementById('lnk-curation').classList.add('active');
   window.scrollTo(0,0);
 }
 
@@ -272,7 +268,6 @@ function buildGallery() {
 function showEvent(idx) {
   const ev = events[idx];
   document.getElementById('ev-title').textContent = ev.name;
-  document.getElementById('ev-brand').textContent = ev.brand;
   document.getElementById('ev-date').textContent = ev.date;
   document.getElementById('ev-role').textContent = ev.role;
   showPage('event');
