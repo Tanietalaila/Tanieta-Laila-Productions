@@ -67,7 +67,7 @@ img{display:block;max-width:100%}
 
 /* ===== EVENT DETAIL ===== */
 .event-back{padding:1.8rem 3rem .5rem}
-.back-btn{font-family:'Courier Prime',monospace;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:#1C1208;background:none;border:none;cursor:pointer;padding:0;transition:color .2s}
+.back-btn{font-family:'Cormorant SC',serif;font-size:1.1rem;letter-spacing:.18em;text-transform:uppercase;color:#1C1208;background:none;border:none;cursor:pointer;padding:.4rem 0;transition:color .2s}
 .back-btn:hover{color:#3A2D1A}
 .event-header{padding:2.5rem 3rem 1.8rem}
 .event-title{font-family:'Cormorant SC',serif;font-weight:600;font-size:clamp(2rem,4vw,4.5rem);letter-spacing:.22em;color:#1C1208;text-transform:uppercase;line-height:1.1;margin-bottom:2.2rem}
@@ -79,6 +79,11 @@ img{display:block;max-width:100%}
 .event-ph{aspect-ratio:2/3;background:linear-gradient(148deg,#4A2D14 0%,#7A5028 30%,#A07030 55%,#C4973A 75%,#8C6230 100%);display:flex;align-items:center;justify-content:center}
 .event-img-cell{aspect-ratio:2/3;overflow:hidden}
 .event-img-cell img{width:100%;height:100%;object-fit:cover}
+.gallery-item.dragging{opacity:.35;transform:scale(.97)}
+.gallery-item.drag-over{outline:2px solid #1C1208;outline-offset:-3px}
+.event-drop-zone{aspect-ratio:2/3;border:1.5px dashed rgba(28,18,8,.22);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-direction:column;gap:.5rem;transition:background .2s,border-color .2s}
+.event-drop-zone span{font-family:'Courier Prime',monospace;font-size:.6rem;letter-spacing:.15em;color:rgba(28,18,8,.38);text-transform:uppercase;text-align:center;padding:0 .5rem}
+.event-drop-zone.drag-active,.event-drop-zone:hover{background:rgba(28,18,8,.04);border-color:rgba(28,18,8,.5)}
 .event-ph span{font-family:'Courier Prime',monospace;font-size:.52rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(245,238,216,.28)}
 
 /* ===== CONTACT ===== */
@@ -263,25 +268,128 @@ function showPage(page) {
   window.scrollTo(0,0);
 }
 
+let _dragSrc = null;
+
+function getOrder() {
+  try {
+    const s = localStorage.getItem('gallery-order');
+    if (s) { const a = JSON.parse(s); if (a.length === events.length) return a; }
+  } catch(e) {}
+  return events.map((_,i) => i);
+}
+function saveOrder(a) { localStorage.setItem('gallery-order', JSON.stringify(a)); }
+
 function buildGallery() {
   const grid = document.getElementById('gallery-grid');
-  events.forEach((evRaw, i) => {
-    const ev = {...evRaw, ...(eventConfig[i]||{})};
+  grid.innerHTML = '';
+  const order = getOrder();
+  order.forEach((evIdx, pos) => {
+    const ev = {...events[evIdx], ...(eventConfig[evIdx]||{})};
     const item = document.createElement('div');
     item.className = 'gallery-item';
+    item.draggable = true;
+    item.dataset.pos = String(pos);
     item.innerHTML =
       '<img src="' + ev.src + '" alt="' + ev.name + '" loading="lazy">' +
       '<div class="g-overlay">' +
         '<div class="ov-name">' + ev.name + '</div>' +
         '<div class="ov-line"></div>' +
         '<div class="ov-meta">' +
-          '<span>' + ev.brand + '</span>' +
           '<span>' + ev.date + '</span>' +
           '<span>' + ev.role + '</span>' +
         '</div>' +
-        '<button class="ov-btn" onclick="showEvent(' + i + ')">View Event &#8594;</button>' +
+        '<button class="ov-btn" onclick="showEvent(' + evIdx + ')">View Event &#8594;</button>' +
       '</div>';
+    item.addEventListener('dragstart', e => {
+      _dragSrc = pos;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => item.classList.add('dragging'), 0);
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      grid.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      grid.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+      if (_dragSrc !== pos) item.classList.add('drag-over');
+    });
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      if (_dragSrc !== null && _dragSrc !== pos) {
+        const ord = getOrder(); const tmp = ord[_dragSrc];
+        ord[_dragSrc] = ord[pos]; ord[pos] = tmp;
+        saveOrder(ord); buildGallery();
+      }
+      _dragSrc = null;
+    });
     grid.appendChild(item);
+  });
+}
+
+// ── IndexedDB for locally-added event photos ─────────────────────────────
+let _photoDB = null;
+function _openPhotoDB() {
+  if (_photoDB) return Promise.resolve(_photoDB);
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('tlp-event-photos', 1);
+    r.onupgradeneeded = e => e.target.result.createObjectStore('p', {keyPath:'id', autoIncrement:true});
+    r.onsuccess = e => { _photoDB = e.target.result; res(_photoDB); };
+    r.onerror = rej;
+  });
+}
+function _savePhoto(evIdx, dataUrl) {
+  return _openPhotoDB().then(db => new Promise((res, rej) => {
+    const tx = db.transaction('p','readwrite');
+    tx.objectStore('p').add({evIdx, dataUrl});
+    tx.oncomplete = res; tx.onerror = rej;
+  }));
+}
+function _getPhotos(evIdx) {
+  return _openPhotoDB().then(db => new Promise((res, rej) => {
+    const r = db.transaction('p','readonly').objectStore('p').getAll();
+    r.onsuccess = e => res(e.target.result.filter(x => x.evIdx === evIdx).map(x => x.dataUrl));
+    r.onerror = rej;
+  })).catch(() => []);
+}
+
+function _makePhotoCell(src, alt) {
+  const c = document.createElement('div'); c.className = 'event-img-cell';
+  const img = document.createElement('img'); img.src = src; img.alt = alt;
+  c.appendChild(img); return c;
+}
+
+function _makeDropZone(evIdx, evName) {
+  const z = document.createElement('div'); z.className = 'event-drop-zone';
+  z.innerHTML = '<span>&#43; Drop photos here<br>or click to browse</span>';
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true;
+  inp.style.display = 'none'; z.appendChild(inp);
+  const handle = files => {
+    Array.from(files).forEach(f => {
+      const rd = new FileReader();
+      rd.onload = ev => _savePhoto(evIdx, ev.target.result).then(() => _renderEventPhotos(evIdx, evName));
+      rd.readAsDataURL(f);
+    });
+  };
+  z.addEventListener('click', () => inp.click());
+  inp.addEventListener('change', e => handle(e.target.files));
+  z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drag-active'); });
+  z.addEventListener('dragleave', () => z.classList.remove('drag-active'));
+  z.addEventListener('drop', e => { e.preventDefault(); z.classList.remove('drag-active'); handle(e.dataTransfer.files); });
+  return z;
+}
+
+function _renderEventPhotos(evIdx, evName) {
+  const ev = {...events[evIdx], ...(eventConfig[evIdx]||{})};
+  const name = evName || ev.name;
+  const grid = document.getElementById('event-photo-grid');
+  grid.innerHTML = '';
+  const embedded = ev.photos || [];
+  embedded.forEach(src => grid.appendChild(_makePhotoCell(src, name)));
+  _getPhotos(evIdx).then(local => {
+    local.forEach(src => grid.appendChild(_makePhotoCell(src, name)));
+    grid.appendChild(_makeDropZone(evIdx, name));
   });
 }
 
@@ -290,26 +398,7 @@ function showEvent(idx) {
   document.getElementById('ev-title').textContent = ev.name;
   document.getElementById('ev-date').textContent = ev.date;
   document.getElementById('ev-role').textContent = ev.role;
-  const grid = document.getElementById('event-photo-grid');
-  grid.innerHTML = '';
-  if (ev.photos && ev.photos.length) {
-    ev.photos.forEach(src => {
-      const c = document.createElement('div');
-      c.className = 'event-img-cell';
-      const img = document.createElement('img');
-      img.src = src;
-      img.alt = ev.name;
-      c.appendChild(img);
-      grid.appendChild(c);
-    });
-  } else {
-    for (let i = 0; i < 8; i++) {
-      const ph = document.createElement('div');
-      ph.className = 'event-ph';
-      ph.innerHTML = '<span>[ Add Photo ]</span>';
-      grid.appendChild(ph);
-    }
-  }
+  _renderEventPhotos(idx, ev.name);
   showPage('event');
 }
 
