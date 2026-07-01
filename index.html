@@ -79,7 +79,7 @@ img{display:block;max-width:100%}
 .event-ph{aspect-ratio:2/3;background:linear-gradient(148deg,#4A2D14 0%,#7A5028 30%,#A07030 55%,#C4973A 75%,#8C6230 100%);display:flex;align-items:center;justify-content:center}
 .event-img-cell{aspect-ratio:2/3;overflow:hidden}
 .event-img-cell img{width:100%;height:100%;object-fit:cover}
-.gallery-item.dragging{opacity:.35;transform:scale(.97)}
+.gallery-item.dragging{opacity:.35;transform:scale(.97)}.gallery-item img{pointer-events:none}.gallery-item .g-overlay{pointer-events:none}.gallery-item:hover .g-overlay{pointer-events:auto}
 .gallery-item.drag-over{outline:2px solid #1C1208;outline-offset:-3px}
 .event-drop-zone{aspect-ratio:2/3;border:1.5px dashed rgba(28,18,8,.22);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-direction:column;gap:.5rem;transition:background .2s,border-color .2s}
 .event-drop-zone span{font-family:'Courier Prime',monospace;font-size:.6rem;letter-spacing:.15em;color:rgba(28,18,8,.38);text-transform:uppercase;text-align:center;padding:0 .5rem}
@@ -290,7 +290,7 @@ function buildGallery() {
     item.draggable = true;
     item.dataset.pos = String(pos);
     item.innerHTML =
-      '<img src="' + ev.src + '" alt="' + ev.name + '" loading="lazy">' +
+      '<img src="' + ev.src + '" alt="' + ev.name + '" loading="lazy" draggable="false">' +
       '<div class="g-overlay">' +
         '<div class="ov-name">' + ev.name + '</div>' +
         '<div class="ov-line"></div>' +
@@ -380,7 +380,9 @@ function _makeDropZone(evIdx, evName) {
   return z;
 }
 
+let _renderGen = 0;
 function _renderEventPhotos(evIdx, evName) {
+  const myGen = ++_renderGen;
   const ev = {...events[evIdx], ...(eventConfig[evIdx]||{})};
   const name = evName || ev.name;
   const grid = document.getElementById('event-photo-grid');
@@ -388,6 +390,7 @@ function _renderEventPhotos(evIdx, evName) {
   const embedded = ev.photos || [];
   embedded.forEach(src => grid.appendChild(_makePhotoCell(src, name)));
   _getPhotos(evIdx).then(local => {
+    if (_renderGen !== myGen) return;
     local.forEach(src => grid.appendChild(_makePhotoCell(src, name)));
     grid.appendChild(_makeDropZone(evIdx, name));
   });
