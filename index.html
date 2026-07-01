@@ -93,6 +93,12 @@ img{display:block;max-width:100%}
 .event-img-cell.dragging{opacity:.35}
 .edit-banner{display:none;position:fixed;bottom:1.4rem;left:50%;transform:translateX(-50%);background:#1C1208;color:#F5EED8;font-family:'Courier Prime',monospace;font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;padding:.45rem 1.4rem;border-radius:2px;z-index:200;pointer-events:none;white-space:nowrap}
 .edit-mode .edit-banner{display:block}
+.gallery-item{position:relative}
+.cover-change-btn{display:none;position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(28,18,8,.78);color:#F5EED8;border:none;font-family:'Courier Prime',monospace;font-size:.5rem;letter-spacing:.15em;text-transform:uppercase;padding:5px 10px;cursor:pointer;z-index:20;white-space:nowrap;border-radius:1px}
+.cover-change-btn:hover{background:#1C1208}
+.edit-mode .gallery-item .cover-change-btn{display:block}
+.edit-mode .gallery-item .g-overlay{opacity:1;pointer-events:auto}
+.edit-mode .ov-name[contenteditable="true"],.edit-mode .ov-meta span[contenteditable="true"]{color:inherit;outline:1px dashed rgba(255,255,255,.5);background:rgba(255,255,255,.08)}
 .gallery-item.dragging{opacity:.35;transform:scale(.97)}.gallery-item img{pointer-events:none}.gallery-item .g-overlay{pointer-events:none}.gallery-item:hover .g-overlay{pointer-events:auto}
 .gallery-item.drag-over{outline:2px solid #1C1208;outline-offset:-3px}
 .event-drop-zone{aspect-ratio:2/3;border:1.5px dashed rgba(28,18,8,.22);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-direction:column;gap:.5rem;transition:background .2s,border-color .2s}
@@ -126,7 +132,7 @@ img{display:block;max-width:100%}
 
 <!-- ========= NAV ========= -->
 <nav class="nav" id="main-nav">
-  <span class="nav-brand" onclick="showPage('gallery')">Tanieta Laila Productions</span>
+  <span class="nav-brand" onclick="showPage('gallery')" data-ekey="nav-brand">Tanieta Laila Productions</span>
   <div class="nav-social">
     <a class="nav-icon" href="https://www.instagram.com/tanieta.laila" target="_blank" rel="noopener" aria-label="Instagram">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -151,8 +157,8 @@ img{display:block;max-width:100%}
     <div class="gallery-grid" id="gallery-grid"></div>
   </section>
   <footer class="footer">
-    <span class="footer-brand">Tanieta Laila Productions</span>
-    <span class="footer-copy">&copy; 2025 Tanieta Laila Productions</span>
+    <span class="footer-brand" data-ekey="footer-brand">Tanieta Laila Productions</span>
+    <span class="footer-copy" data-ekey="footer-copy">&copy; 2025 Tanieta Laila Productions</span>
   </footer>
 </div>
 
@@ -171,8 +177,8 @@ img{display:block;max-width:100%}
   </div>
   <div class="event-grid" id="event-photo-grid"></div>
   <footer class="footer">
-    <span class="footer-brand">Tanieta Laila Productions</span>
-    <span class="footer-copy">&copy; 2025 Tanieta Laila Productions</span>
+    <span class="footer-brand" data-ekey="footer-brand">Tanieta Laila Productions</span>
+    <span class="footer-copy" data-ekey="footer-copy">&copy; 2025 Tanieta Laila Productions</span>
   </footer>
 </div>
 
@@ -180,15 +186,15 @@ img{display:block;max-width:100%}
 <div id="pg-contact" style="display:none">
   <div class="contact-layout">
     <div class="contact-l">
-      <span class="cl-lets">Let's</span>
-      <span class="cl-script">Collaborate</span>
-      <p class="cl-desc">Bespoke tablescapes and event production for brands and private clients who believe the table is a work of art.</p>
+      <span class="cl-lets" data-ekey="cl-lets">Let's</span>
+      <span class="cl-script" data-ekey="cl-script">Collaborate</span>
+      <p class="cl-desc" data-ekey="cl-desc">Bespoke tablescapes and event production for brands and private clients who believe the table is a work of art.</p>
       <div>
-        <div class="ci"><span class="ci-label">Phone</span><span class="ci-val">07780 378049</span></div>
-        <div class="ci"><span class="ci-label">Email</span><span class="ci-val">Ctanieta@icloud.com</span></div>
-        <div class="ci"><span class="ci-label">Instagram</span><span class="ci-val">@tanieta_laila</span></div>
-        <div class="ci"><span class="ci-label">Website</span><span class="ci-val">tanietalaila.com</span></div>
-        <div class="ci"><span class="ci-label">Based In</span><span class="ci-val">London, UK</span></div>
+        <div class="ci"><span class="ci-label">Phone</span><span class="ci-val" data-ekey="ci-phone">07780 378049</span></div>
+        <div class="ci"><span class="ci-label">Email</span><span class="ci-val" data-ekey="ci-email">Ctanieta@icloud.com</span></div>
+        <div class="ci"><span class="ci-label">Instagram</span><span class="ci-val" data-ekey="ci-ig">@tanieta_laila</span></div>
+        <div class="ci"><span class="ci-label">Website</span><span class="ci-val" data-ekey="ci-web">tanietalaila.com</span></div>
+        <div class="ci"><span class="ci-label">Based In</span><span class="ci-val" data-ekey="ci-loc">London, UK</span></div>
       </div>
     </div>
     <div class="contact-r">
@@ -222,8 +228,8 @@ img{display:block;max-width:100%}
     </div>
   </div>
   <footer class="footer">
-    <span class="footer-brand">Tanieta Laila Productions</span>
-    <span class="footer-copy">&copy; 2025 Tanieta Laila Productions</span>
+    <span class="footer-brand" data-ekey="footer-brand">Tanieta Laila Productions</span>
+    <span class="footer-copy" data-ekey="footer-copy">&copy; 2025 Tanieta Laila Productions</span>
   </footer>
 </div>
 
@@ -300,21 +306,41 @@ function buildGallery() {
   const order = getOrder();
   order.forEach((evIdx, pos) => {
     const ev = {...events[evIdx], ..._effCfg(evIdx)};
+    const coverSrc = _coverCache[evIdx] || ev.src;
     const item = document.createElement('div');
     item.className = 'gallery-item';
     item.draggable = true;
     item.dataset.pos = String(pos);
     item.innerHTML =
-      '<img src="' + ev.src + '" alt="' + ev.name + '" loading="lazy" draggable="false">' +
+      '<img src="' + coverSrc + '" alt="' + ev.name + '" loading="lazy" draggable="false">' +
       '<div class="g-overlay">' +
-        '<div class="ov-name">' + ev.name + '</div>' +
+        '<div class="ov-name" data-ekey="ev-'+evIdx+'-name">' + ev.name + '</div>' +
         '<div class="ov-line"></div>' +
         '<div class="ov-meta">' +
-          '<span>' + ev.date + '</span>' +
-          '<span>' + ev.role + '</span>' +
+          '<span data-ekey="ev-'+evIdx+'-date">' + ev.date + '</span>' +
+          '<span data-ekey="ev-'+evIdx+'-role">' + ev.role + '</span>' +
         '</div>' +
-        '<button class="ov-btn" onclick="showEvent(' + evIdx + ')">View Event &#8594;</button>' +
+        '<button class="ov-btn" onclick="showEvent('+evIdx+')">View Event &#8594;</button>' +
       '</div>';
+    // cover change button (edit mode only)
+    const coverBtn = document.createElement('button');
+    coverBtn.className = 'cover-change-btn';
+    coverBtn.textContent = '↑ Change Cover Photo';
+    const coverInp = document.createElement('input');
+    coverInp.type = 'file'; coverInp.accept = 'image/*'; coverInp.style.display = 'none';
+    coverInp.addEventListener('change', e => {
+      const f = e.target.files[0]; if (!f) return;
+      const rd = new FileReader();
+      rd.onload = ev => {
+        _saveCover(evIdx, ev.target.result).then(() => {
+          _coverCache[evIdx] = ev.target.result; buildGallery();
+        });
+      };
+      rd.readAsDataURL(f);
+    });
+    coverBtn.addEventListener('click', e => { e.stopPropagation(); coverInp.click(); });
+    item.appendChild(coverBtn);
+    item.appendChild(coverInp);
     item.addEventListener('dragstart', e => {
       _dragSrc = pos;
       e.dataTransfer.effectAllowed = 'move';
@@ -340,6 +366,7 @@ function buildGallery() {
     });
     grid.appendChild(item);
   });
+  if (_editMode) _applyEditable();
 }
 
 // ── Edit mode ─────────────────────────────────────────────────────────────
@@ -397,11 +424,35 @@ let _photoDB = null;
 function _openPhotoDB() {
   if (_photoDB) return Promise.resolve(_photoDB);
   return new Promise((res, rej) => {
-    const r = indexedDB.open('tlp-event-photos', 1);
-    r.onupgradeneeded = e => e.target.result.createObjectStore('p', {keyPath:'id', autoIncrement:true});
+    const r = indexedDB.open('tlp-event-photos', 2);
+    r.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('p')) db.createObjectStore('p', {keyPath:'id', autoIncrement:true});
+      if (!db.objectStoreNames.contains('covers')) db.createObjectStore('covers', {keyPath:'evIdx'});
+    };
     r.onsuccess = e => { _photoDB = e.target.result; res(_photoDB); };
     r.onerror = rej;
   });
+}
+function _saveCover(evIdx, dataUrl) {
+  return _openPhotoDB().then(db => new Promise((res, rej) => {
+    const tx = db.transaction('covers','readwrite');
+    tx.objectStore('covers').put({evIdx, dataUrl});
+    tx.oncomplete = res; tx.onerror = rej;
+  }));
+}
+function _getAllCovers() {
+  return _openPhotoDB().then(db => new Promise((res, rej) => {
+    const r = db.transaction('covers','readonly').objectStore('covers').getAll();
+    r.onsuccess = e => res(e.target.result);
+    r.onerror = rej;
+  })).catch(() => []);
+}
+let _coverCache = {};
+function _loadCovers() {
+  return _getAllCovers().then(covers => {
+    covers.forEach(({evIdx, dataUrl}) => { _coverCache[evIdx] = dataUrl; });
+  }).catch(() => {});
 }
 function _savePhoto(evIdx, dataUrl) {
   return _openPhotoDB().then(db => new Promise((res, rej) => {
@@ -537,8 +588,7 @@ function handleForm(e) {
   document.getElementById('form-success').style.display = 'block';
 }
 
-buildGallery();
-_applyTextOverrides();
+_loadCovers().then(() => { buildGallery(); _applyTextOverrides(); });
 </script>
   <div class="edit-banner">Edit mode — drag to reorder &nbsp;·&nbsp; click text to edit &nbsp;·&nbsp; &#10003; Done when finished</div>
 </body>
