@@ -79,6 +79,20 @@ img{display:block;max-width:100%}
 .event-ph{aspect-ratio:2/3;background:linear-gradient(148deg,#4A2D14 0%,#7A5028 30%,#A07030 55%,#C4973A 75%,#8C6230 100%);display:flex;align-items:center;justify-content:center}
 .event-img-cell{aspect-ratio:2/3;overflow:hidden}
 .event-img-cell img{width:100%;height:100%;object-fit:cover}
+#edit-toggle{font-family:'Courier Prime',monospace;font-size:.56rem;letter-spacing:.2em;text-transform:uppercase;color:#1C1208;background:none;border:1px dashed rgba(28,18,8,.35);cursor:pointer;padding:4px 10px;transition:all .2s;margin-left:.6rem}
+#edit-toggle.active{background:#1C1208;color:#F5EED8;border-color:#1C1208}
+.edit-mode [contenteditable="true"]{outline:1.5px dashed rgba(28,18,8,.3);padding:1px 4px;cursor:text;border-radius:1px;min-width:2em;display:inline-block}
+.edit-mode [contenteditable="true"]:hover{outline-color:rgba(28,18,8,.55)}
+.edit-mode [contenteditable="true"]:focus{outline:1.5px solid #1C1208;background:rgba(28,18,8,.02)}
+.event-img-cell{position:relative}
+.photo-del-btn{display:none;position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(28,18,8,.7);color:#fff;border:none;cursor:pointer;font-size:17px;line-height:1;z-index:10;align-items:center;justify-content:center;padding:0}
+.photo-del-btn:hover{background:#c0392b}
+.edit-mode .photo-del-btn{display:flex}
+.edit-mode .event-img-cell{cursor:grab}
+.edit-mode .event-img-cell img{pointer-events:none}
+.event-img-cell.dragging{opacity:.35}
+.edit-banner{display:none;position:fixed;bottom:1.4rem;left:50%;transform:translateX(-50%);background:#1C1208;color:#F5EED8;font-family:'Courier Prime',monospace;font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;padding:.45rem 1.4rem;border-radius:2px;z-index:200;pointer-events:none;white-space:nowrap}
+.edit-mode .edit-banner{display:block}
 .gallery-item.dragging{opacity:.35;transform:scale(.97)}.gallery-item img{pointer-events:none}.gallery-item .g-overlay{pointer-events:none}.gallery-item:hover .g-overlay{pointer-events:auto}
 .gallery-item.drag-over{outline:2px solid #1C1208;outline-offset:-3px}
 .event-drop-zone{aspect-ratio:2/3;border:1.5px dashed rgba(28,18,8,.22);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-direction:column;gap:.5rem;transition:background .2s,border-color .2s}
@@ -123,14 +137,15 @@ img{display:block;max-width:100%}
     </a>
     <a class="nav-web" href="https://tanietalaila.com" target="_blank" rel="noopener">tanietalaila.com</a>
     <a id="lnk-portfolio" class="active" style="font-family:'Courier Prime',monospace;font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:#1C1208;cursor:pointer;padding-bottom:2px;border-bottom:1px solid #1C1208;text-decoration:none" onclick="showPage('gallery')">Portfolio</a>
+    <button id="edit-toggle" onclick="toggleEditMode()">&#9998; Edit</button>
   </div>
 </nav>
 
 <!-- ========= PAGE: GALLERY ========= -->
 <div id="pg-gallery">
   <section class="hero">
-    <h1 class="hero-title">Portfolio &#8212; Selected Works</h1>
-    <p class="hero-sub">Event Production &nbsp;&nbsp;&middot;&nbsp;&nbsp; Tablescaping &nbsp;&nbsp;&middot;&nbsp;&nbsp; Florist &nbsp;&nbsp;&middot;&nbsp;&nbsp; Chef</p>
+    <h1 class="hero-title" id="hero-title" data-ekey="hero-title">Portfolio &#8212; Selected Works</h1>
+    <p class="hero-sub" id="hero-sub" data-ekey="hero-sub">Event Production &nbsp;&nbsp;&middot;&nbsp;&nbsp; Tablescaping &nbsp;&nbsp;&middot;&nbsp;&nbsp; Florist &nbsp;&nbsp;&middot;&nbsp;&nbsp; Chef</p>
   </section>
   <section class="gallery-section">
     <div class="gallery-grid" id="gallery-grid"></div>
@@ -284,7 +299,7 @@ function buildGallery() {
   grid.innerHTML = '';
   const order = getOrder();
   order.forEach((evIdx, pos) => {
-    const ev = {...events[evIdx], ...(eventConfig[evIdx]||{})};
+    const ev = {...events[evIdx], ..._effCfg(evIdx)};
     const item = document.createElement('div');
     item.className = 'gallery-item';
     item.draggable = true;
@@ -327,7 +342,57 @@ function buildGallery() {
   });
 }
 
-// ── IndexedDB for locally-added event photos ─────────────────────────────
+// ── Edit mode ─────────────────────────────────────────────────────────────
+let _editMode = false;
+
+function toggleEditMode() {
+  _editMode = !_editMode;
+  document.body.classList.toggle('edit-mode', _editMode);
+  const btn = document.getElementById('edit-toggle');
+  btn.textContent = _editMode ? '✓ Done' : '✎ Edit';
+  btn.classList.toggle('active', _editMode);
+  _applyEditable();
+  const ep = document.getElementById('pg-event');
+  if (ep && ep.style.display !== 'none') {
+    const idx = parseInt(ep.dataset.evIdx || '-1');
+    if (idx >= 0) _renderEventPhotos(idx);
+  }
+  buildGallery();
+}
+
+// ── Text overrides ────────────────────────────────────────────────────────
+function _getTextOv() {
+  try { return JSON.parse(localStorage.getItem('tlp-text') || '{}'); } catch(e) { return {}; }
+}
+function _setTextOv(k, v) {
+  const o = _getTextOv(); o[k] = v;
+  localStorage.setItem('tlp-text', JSON.stringify(o));
+}
+function _effCfg(evIdx) {
+  const base = {...(eventConfig[evIdx] || {})};
+  const ov = _getTextOv();
+  if (ov['ev-'+evIdx+'-name'] !== undefined) base.name = ov['ev-'+evIdx+'-name'];
+  if (ov['ev-'+evIdx+'-date'] !== undefined) base.date = ov['ev-'+evIdx+'-date'];
+  if (ov['ev-'+evIdx+'-role'] !== undefined) base.role = ov['ev-'+evIdx+'-role'];
+  return base;
+}
+function _applyTextOverrides() {
+  const ov = _getTextOv();
+  document.querySelectorAll('[data-ekey]').forEach(el => {
+    if (ov[el.dataset.ekey] !== undefined) el.textContent = ov[el.dataset.ekey];
+  });
+}
+function _applyEditable() {
+  document.querySelectorAll('[data-ekey]').forEach(el => {
+    el.contentEditable = _editMode ? 'true' : 'false';
+    if (_editMode && !el._ekeyBound) {
+      el._ekeyBound = true;
+      el.addEventListener('input', function() { _setTextOv(this.dataset.ekey, this.textContent); });
+    }
+  });
+}
+
+// ── IndexedDB + photo manifest ────────────────────────────────────────────
 let _photoDB = null;
 function _openPhotoDB() {
   if (_photoDB) return Promise.resolve(_photoDB);
@@ -341,37 +406,48 @@ function _openPhotoDB() {
 function _savePhoto(evIdx, dataUrl) {
   return _openPhotoDB().then(db => new Promise((res, rej) => {
     const tx = db.transaction('p','readwrite');
-    tx.objectStore('p').add({evIdx, dataUrl});
-    tx.oncomplete = res; tx.onerror = rej;
+    const req = tx.objectStore('p').add({evIdx, dataUrl});
+    req.onsuccess = e => res(e.target.result);
+    tx.onerror = rej;
   }));
 }
-function _getPhotos(evIdx) {
+function _getPhotoById(id) {
   return _openPhotoDB().then(db => new Promise((res, rej) => {
-    const r = db.transaction('p','readonly').objectStore('p').getAll();
-    r.onsuccess = e => res(e.target.result.filter(x => x.evIdx === evIdx).map(x => x.dataUrl));
+    const r = db.transaction('p','readonly').objectStore('p').get(id);
+    r.onsuccess = e => res(e.target.result);
     r.onerror = rej;
-  })).catch(() => []);
+  })).catch(() => null);
+}
+function _deleteFromDB(id) {
+  return _openPhotoDB().then(db => new Promise((res, rej) => {
+    const tx = db.transaction('p','readwrite');
+    tx.objectStore('p').delete(id);
+    tx.oncomplete = res; tx.onerror = rej;
+  })).catch(() => {});
 }
 
-function _makePhotoCell(src, alt) {
-  const c = document.createElement('div'); c.className = 'event-img-cell';
-  const img = document.createElement('img'); img.src = src; img.alt = alt;
-  c.appendChild(img); return c;
+// manifest: ordered [{t:'e',i:N}|{t:'l',id:N}] per event
+function _getManifest(evIdx) {
+  try { const s = localStorage.getItem('tlp-pm-'+evIdx); if (s) return JSON.parse(s); } catch(e) {}
+  return ((events[evIdx] && events[evIdx].photos) || []).map((_,i) => ({t:'e',i}));
 }
+function _saveManifest(evIdx, m) { localStorage.setItem('tlp-pm-'+evIdx, JSON.stringify(m)); }
 
-function _makeDropZone(evIdx, evName) {
+// ── Drop zone ─────────────────────────────────────────────────────────────
+function _makeDropZone(evIdx) {
   const z = document.createElement('div'); z.className = 'event-drop-zone';
   z.innerHTML = '<span>&#43; Drop photos here<br>or click to browse</span>';
   const inp = document.createElement('input');
-  inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true;
-  inp.style.display = 'none'; z.appendChild(inp);
-  const handle = files => {
-    Array.from(files).forEach(f => {
-      const rd = new FileReader();
-      rd.onload = ev => _savePhoto(evIdx, ev.target.result).then(() => _renderEventPhotos(evIdx, evName));
-      rd.readAsDataURL(f);
+  inp.type='file'; inp.accept='image/*'; inp.multiple=true; inp.style.display='none';
+  z.appendChild(inp);
+  const handle = files => Array.from(files).forEach(f => {
+    const rd = new FileReader();
+    rd.onload = e => _savePhoto(evIdx, e.target.result).then(newId => {
+      const m = _getManifest(evIdx); m.push({t:'l',id:newId});
+      _saveManifest(evIdx, m); _renderEventPhotos(evIdx);
     });
-  };
+    rd.readAsDataURL(f);
+  });
   z.addEventListener('click', () => inp.click());
   inp.addEventListener('change', e => handle(e.target.files));
   z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drag-active'); });
@@ -380,31 +456,81 @@ function _makeDropZone(evIdx, evName) {
   return z;
 }
 
-let _renderGen = 0;
-function _renderEventPhotos(evIdx, evName) {
+// ── Event photo rendering ─────────────────────────────────────────────────
+let _renderGen = 0, _evPhotoDragSrc = null;
+
+function _renderEventPhotos(evIdx) {
   const myGen = ++_renderGen;
-  const ev = {...events[evIdx], ...(eventConfig[evIdx]||{})};
-  const name = evName || ev.name;
+  const ev = {...events[evIdx], ..._effCfg(evIdx)};
   const grid = document.getElementById('event-photo-grid');
   grid.innerHTML = '';
-  const embedded = ev.photos || [];
-  embedded.forEach(src => grid.appendChild(_makePhotoCell(src, name)));
-  _getPhotos(evIdx).then(local => {
+  const embedded = (events[evIdx] && events[evIdx].photos) || [];
+  const manifest = _getManifest(evIdx);
+  Promise.all(manifest.map((entry, mIdx) =>
+    entry.t === 'e'
+      ? Promise.resolve(embedded[entry.i] != null ? {src:embedded[entry.i], mIdx, entry} : null)
+      : _getPhotoById(entry.id).then(r => r ? {src:r.dataUrl, mIdx, entry} : null)
+  )).then(items => {
     if (_renderGen !== myGen) return;
-    local.forEach(src => grid.appendChild(_makePhotoCell(src, name)));
-    grid.appendChild(_makeDropZone(evIdx, name));
+    items.filter(Boolean).forEach(({src, mIdx, entry}) => {
+      const c = document.createElement('div'); c.className = 'event-img-cell';
+      const img = document.createElement('img');
+      img.src = src; img.alt = ev.name; img.draggable = false;
+      c.appendChild(img);
+      if (_editMode) {
+        c.draggable = true;
+        c.addEventListener('dragstart', e => {
+          _evPhotoDragSrc = mIdx; e.dataTransfer.effectAllowed = 'move';
+          setTimeout(() => c.classList.add('dragging'), 0);
+        });
+        c.addEventListener('dragend', () => {
+          c.classList.remove('dragging');
+          grid.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        });
+        c.addEventListener('dragover', e => {
+          e.preventDefault();
+          grid.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+          if (_evPhotoDragSrc !== mIdx) c.classList.add('drag-over');
+        });
+        c.addEventListener('drop', e => {
+          e.preventDefault();
+          if (_evPhotoDragSrc !== null && _evPhotoDragSrc !== mIdx) {
+            const m = _getManifest(evIdx);
+            const [moved] = m.splice(_evPhotoDragSrc, 1);
+            m.splice(_evPhotoDragSrc < mIdx ? mIdx-1 : mIdx, 0, moved);
+            _saveManifest(evIdx, m); _renderEventPhotos(evIdx);
+          }
+          _evPhotoDragSrc = null;
+        });
+        const del = document.createElement('button');
+        del.className = 'photo-del-btn'; del.textContent = '×'; del.title = 'Remove';
+        del.onclick = e => {
+          e.stopPropagation();
+          const m = _getManifest(evIdx);
+          if (entry.t === 'l') _deleteFromDB(entry.id);
+          m.splice(mIdx, 1); _saveManifest(evIdx, m); _renderEventPhotos(evIdx);
+        };
+        c.appendChild(del);
+      }
+      grid.appendChild(c);
+    });
+    grid.appendChild(_makeDropZone(evIdx));
   });
 }
 
 function showEvent(idx) {
-  const ev = {...events[idx], ...(eventConfig[idx]||{})};
-  document.getElementById('ev-title').textContent = ev.name;
-  document.getElementById('ev-date').textContent = ev.date;
-  document.getElementById('ev-role').textContent = ev.role;
-  _renderEventPhotos(idx, ev.name);
+  const ev = {...events[idx], ..._effCfg(idx)};
+  const titleEl = document.getElementById('ev-title');
+  const dateEl  = document.getElementById('ev-date');
+  const roleEl  = document.getElementById('ev-role');
+  titleEl.textContent = ev.name; titleEl.dataset.ekey = 'ev-'+idx+'-name';
+  dateEl.textContent  = ev.date; dateEl.dataset.ekey  = 'ev-'+idx+'-date';
+  roleEl.textContent  = ev.role; roleEl.dataset.ekey  = 'ev-'+idx+'-role';
+  document.getElementById('pg-event').dataset.evIdx = String(idx);
+  _renderEventPhotos(idx);
   showPage('event');
+  if (_editMode) _applyEditable();
 }
-
 function handleForm(e) {
   e.preventDefault();
   document.getElementById('contact-form').style.display = 'none';
@@ -412,6 +538,8 @@ function handleForm(e) {
 }
 
 buildGallery();
+_applyTextOverrides();
 </script>
+  <div class="edit-banner">Edit mode — drag to reorder &nbsp;·&nbsp; click text to edit &nbsp;·&nbsp; &#10003; Done when finished</div>
 </body>
 </html>
