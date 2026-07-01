@@ -126,6 +126,14 @@ img{display:block;max-width:100%}
 .form-success{display:none;text-align:center;padding:4rem 0}
 .fs-ty{font-family:'Cormorant SC',serif;font-weight:300;font-size:3.5rem;letter-spacing:.2em;color:#1C1208;display:block;margin-bottom:1rem;text-transform:uppercase}
 .fs-msg{font-family:'Cormorant Garamond',serif;font-weight:300;font-style:italic;font-size:.95rem;color:rgba(28,18,8,.55);letter-spacing:.08em}
+
+.gallery-add-card { background: #f5f0ea; cursor: pointer; border: 2px dashed #c8b89a; display: flex; align-items: center; justify-content: center; }
+.gallery-add-card:hover { background: #ede6da; border-color: #1C1208; }
+.gallery-add-card .add-card-inner { display: flex; flex-direction: column; align-items: center; gap: 12px; pointer-events: none; }
+.gallery-add-card .add-card-plus { font-size: 3rem; line-height: 1; color: #1C1208; font-weight: 300; }
+.gallery-add-card .add-card-label { font-family: 'Cormorant Garamond', serif; font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; color: #1C1208; }
+.event-del-btn { position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%); display: none; background: #c0392b; color: #fff; border: none; padding: 6px 14px; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; white-space: nowrap; z-index: 12; }
+.edit-mode .gallery-item:hover .event-del-btn { display: block; }
 </style>
 </head>
 <body>
@@ -292,11 +300,17 @@ function showPage(page) {
 let _dragSrc = null;
 
 function getOrder() {
+  const allIds = [...events.map((_,i) => i), ..._extraEvents.map(e => e.id + 10000)];
   try {
     const s = localStorage.getItem('gallery-order');
-    if (s) { const a = JSON.parse(s); if (a.length === events.length) return a; }
+    if (s) {
+      const saved = JSON.parse(s);
+      const valid = saved.filter(id => allIds.includes(id));
+      const missing = allIds.filter(id => !valid.includes(id));
+      return [...valid, ...missing];
+    }
   } catch(e) {}
-  return events.map((_,i) => i);
+  return allIds;
 }
 function saveOrder(a) { localStorage.setItem('gallery-order', JSON.stringify(a)); }
 
@@ -305,8 +319,11 @@ function buildGallery() {
   grid.innerHTML = '';
   const order = getOrder();
   order.forEach((evIdx, pos) => {
-    const ev = {...events[evIdx], ..._effCfg(evIdx)};
-    const coverSrc = _coverCache[evIdx] || ev.src;
+    const cfg = _effCfg(evIdx);
+    const isExtra = evIdx >= 10000;
+    const baseEv = isExtra ? (_extraEvents.find(e => e.id === evIdx - 10000) || {}) : (events[evIdx] || {});
+    const ev = {...baseEv, ...cfg};
+    const coverSrc = _coverCache[evIdx] || (isExtra ? ev.coverUrl : ev.src) || '';
     const item = document.createElement('div');
     item.className = 'gallery-item';
     item.draggable = true;
@@ -322,7 +339,6 @@ function buildGallery() {
         '</div>' +
         '<button class="ov-btn" onclick="showEvent('+evIdx+')">View Event &#8594;</button>' +
       '</div>';
-    // cover change button (edit mode only)
     const coverBtn = document.createElement('button');
     coverBtn.className = 'cover-change-btn';
     coverBtn.textContent = '↑ Change Cover Photo';
@@ -341,6 +357,22 @@ function buildGallery() {
     coverBtn.addEventListener('click', e => { e.stopPropagation(); coverInp.click(); });
     item.appendChild(coverBtn);
     item.appendChild(coverInp);
+    if (isExtra && _editMode) {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'event-del-btn';
+      delBtn.textContent = '× Delete Event';
+      delBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (!confirm('Delete this event? This cannot be undone.')) return;
+        const xid = evIdx - 10000;
+        _deleteExtraEvent(xid).then(() => {
+          delete _coverCache[evIdx];
+          const ord = getOrder().filter(id => id !== evIdx);
+          saveOrder(ord); buildGallery();
+        });
+      });
+      item.appendChild(delBtn);
+    }
     item.addEventListener('dragstart', e => {
       _dragSrc = pos;
       e.dataTransfer.effectAllowed = 'move';
@@ -366,7 +398,28 @@ function buildGallery() {
     });
     grid.appendChild(item);
   });
-  if (_editMode) _applyEditable();
+  if (_editMode) {
+    const addCard = document.createElement('div');
+    addCard.className = 'gallery-item gallery-add-card';
+    addCard.innerHTML = '<div class="add-card-inner"><span class="add-card-plus">+</span><span class="add-card-label">Add New Event</span></div>';
+    const addInp = document.createElement('input');
+    addInp.type = 'file'; addInp.accept = 'image/*'; addInp.style.display = 'none';
+    addInp.addEventListener('change', e => {
+      const f = e.target.files[0]; if (!f) return;
+      const rd = new FileReader();
+      rd.onload = ev => {
+        _addExtraEvent(ev.target.result).then(newId => {
+          _coverCache[newId + 10000] = ev.target.result;
+          buildGallery();
+        });
+      };
+      rd.readAsDataURL(f);
+    });
+    addCard.appendChild(addInp);
+    addCard.addEventListener('click', () => addInp.click());
+    grid.appendChild(addCard);
+    _applyEditable();
+  }
 }
 
 // ── Edit mode ─────────────────────────────────────────────────────────────
@@ -396,7 +449,13 @@ function _setTextOv(k, v) {
   localStorage.setItem('tlp-text', JSON.stringify(o));
 }
 function _effCfg(evIdx) {
-  const base = {...(eventConfig[evIdx] || {})};
+  let base;
+  if (evIdx >= 10000) {
+    const xev = _extraEvents.find(e => e.id === evIdx - 10000);
+    base = xev ? {name:xev.name, date:xev.date, role:xev.role} : {name:'Event',date:'',role:''};
+  } else {
+    base = {...(eventConfig[evIdx] || {})};
+  }
   const ov = _getTextOv();
   if (ov['ev-'+evIdx+'-name'] !== undefined) base.name = ov['ev-'+evIdx+'-name'];
   if (ov['ev-'+evIdx+'-date'] !== undefined) base.date = ov['ev-'+evIdx+'-date'];
@@ -424,11 +483,12 @@ let _photoDB = null;
 function _openPhotoDB() {
   if (_photoDB) return Promise.resolve(_photoDB);
   return new Promise((res, rej) => {
-    const r = indexedDB.open('tlp-event-photos', 2);
+    const r = indexedDB.open('tlp-event-photos', 3);
     r.onupgradeneeded = e => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains('p')) db.createObjectStore('p', {keyPath:'id', autoIncrement:true});
       if (!db.objectStoreNames.contains('covers')) db.createObjectStore('covers', {keyPath:'evIdx'});
+      if (!db.objectStoreNames.contains('xevents')) db.createObjectStore('xevents', {keyPath:'id', autoIncrement:true});
     };
     r.onsuccess = e => { _photoDB = e.target.result; res(_photoDB); };
     r.onerror = rej;
@@ -454,6 +514,34 @@ function _loadCovers() {
     covers.forEach(({evIdx, dataUrl}) => { _coverCache[evIdx] = dataUrl; });
   }).catch(() => {});
 }
+// ── Extra events (user-added) ─────────────────────────────────────────────
+let _extraEvents = [];
+function _loadExtraEvents() {
+  return _openPhotoDB().then(db => new Promise((res, rej) => {
+    const r = db.transaction('xevents','readonly').objectStore('xevents').getAll();
+    r.onsuccess = e => { _extraEvents = e.target.result || []; res(); };
+    r.onerror = rej;
+  })).catch(() => {});
+}
+function _addExtraEvent(coverUrl) {
+  const rec = {name:'New Event', date:'2026', role:'Event Production', coverUrl};
+  return _openPhotoDB().then(db => new Promise((res, rej) => {
+    const tx = db.transaction('xevents','readwrite');
+    const req = tx.objectStore('xevents').add(rec);
+    req.onsuccess = e => { rec.id = e.target.result; _extraEvents.push(rec); res(rec.id); };
+    tx.onerror = rej;
+  }));
+}
+function _deleteExtraEvent(id) {
+  _extraEvents = _extraEvents.filter(e => e.id !== id);
+  localStorage.removeItem('tlp-pm-'+(id+10000));
+  return _openPhotoDB().then(db => new Promise((res, rej) => {
+    const tx = db.transaction('xevents','readwrite');
+    tx.objectStore('xevents').delete(id);
+    tx.oncomplete = res; tx.onerror = rej;
+  })).catch(() => {});
+}
+
 function _savePhoto(evIdx, dataUrl) {
   return _openPhotoDB().then(db => new Promise((res, rej) => {
     const tx = db.transaction('p','readwrite');
@@ -480,6 +568,7 @@ function _deleteFromDB(id) {
 // manifest: ordered [{t:'e',i:N}|{t:'l',id:N}] per event
 function _getManifest(evIdx) {
   try { const s = localStorage.getItem('tlp-pm-'+evIdx); if (s) return JSON.parse(s); } catch(e) {}
+  if (evIdx >= 10000) return [];
   return ((events[evIdx] && events[evIdx].photos) || []).map((_,i) => ({t:'e',i}));
 }
 function _saveManifest(evIdx, m) { localStorage.setItem('tlp-pm-'+evIdx, JSON.stringify(m)); }
@@ -512,10 +601,10 @@ let _renderGen = 0, _evPhotoDragSrc = null;
 
 function _renderEventPhotos(evIdx) {
   const myGen = ++_renderGen;
-  const ev = {...events[evIdx], ..._effCfg(evIdx)};
+  const ev = {..._effCfg(evIdx)};
   const grid = document.getElementById('event-photo-grid');
   grid.innerHTML = '';
-  const embedded = (events[evIdx] && events[evIdx].photos) || [];
+  const embedded = (evIdx < 10000 && events[evIdx] && events[evIdx].photos) ? events[evIdx].photos : [];
   const manifest = _getManifest(evIdx);
   Promise.all(manifest.map((entry, mIdx) =>
     entry.t === 'e'
@@ -570,7 +659,7 @@ function _renderEventPhotos(evIdx) {
 }
 
 function showEvent(idx) {
-  const ev = {...events[idx], ..._effCfg(idx)};
+  const ev = {..._effCfg(idx)};
   const titleEl = document.getElementById('ev-title');
   const dateEl  = document.getElementById('ev-date');
   const roleEl  = document.getElementById('ev-role');
@@ -588,7 +677,7 @@ function handleForm(e) {
   document.getElementById('form-success').style.display = 'block';
 }
 
-_loadCovers().then(() => { buildGallery(); _applyTextOverrides(); });
+Promise.all([_loadCovers(), _loadExtraEvents()]).then(() => { buildGallery(); _applyTextOverrides(); });
 </script>
   <div class="edit-banner">Edit mode — drag to reorder &nbsp;·&nbsp; click text to edit &nbsp;·&nbsp; &#10003; Done when finished</div>
 </body>
