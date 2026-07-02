@@ -38,8 +38,8 @@ img{display:block;max-width:100%}
 .gallery-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .gallery-item{aspect-ratio:2/3;position:relative;overflow:hidden}
 .gallery-item img{width:100%;height:100%;object-fit:cover;transition:filter .5s ease,opacity .5s ease,transform .55s ease}
-.gallery-item:hover img{filter:grayscale(100%);opacity:.38;transform:scale(1.04)}
-.g-overlay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2rem 1.4rem;opacity:0;transition:opacity .45s ease;pointer-events:none;background:rgba(255,255,255,.70);width:82%;text-align:center}
+.gallery-item:hover img{filter:grayscale(100%);opacity:.5;transform:scale(1.04)}
+.g-overlay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2rem 1.4rem;opacity:0;transition:opacity .45s ease;pointer-events:none;background:transparent;width:82%;text-align:center}
 .gallery-item:hover .g-overlay{opacity:1;pointer-events:auto}
 .ov-name{font-family:'Cormorant SC',serif;font-weight:600;font-size:.72rem;letter-spacing:.22em;color:#1C1208;text-transform:uppercase;text-align:center;margin-bottom:.55rem}
 .ov-line{width:1.8rem;height:1px;background:rgba(28,18,8,.2);margin-bottom:.55rem}
@@ -202,7 +202,7 @@ img{display:block;max-width:100%}
 <!-- ========= PAGE: EVENT DETAIL ========= -->
 <div id="pg-event" style="display:none">
   <div class="event-back">
-    <button class="back-btn" onclick="showPage('gallery')">← Back to Portfolio</button>
+    <button class="back-btn" onclick="history.back()">← Back to Portfolio</button>
   </div>
   <div class="event-header">
     <h1 class="event-title" id="ev-title">Event Name</h1>
@@ -310,7 +310,8 @@ if (_PUBLISHED) {
   const _ex = document.getElementById('export-btn'); if (_ex) _ex.style.display = 'none';
 }
 
-function showPage(page) {
+let _curView = 'gallery';
+function showPage(page, _fromPop) {
   ['gallery','event','contact'].forEach(p => {
     document.getElementById('pg-'+p).style.display = 'none';
   });
@@ -318,6 +319,13 @@ function showPage(page) {
   document.getElementById('pg-'+page).style.display = 'block';
   if (page === 'gallery') document.getElementById('lnk-portfolio').classList.add('active');
   window.scrollTo(0,0);
+  if (!_fromPop) {
+    const _idx = page === 'event' ? parseInt(document.getElementById('pg-event').dataset.evIdx || '-1', 10) : null;
+    if (!(page === _curView && page !== 'event')) {
+      history.pushState({tlp:true, page:page, idx:_idx}, '');
+    }
+  }
+  _curView = page;
 }
 
 let _dragSrc = null;
@@ -693,7 +701,7 @@ function _renderEventPhotos(evIdx) {
   });
 }
 
-function showEvent(idx) {
+function _populateEvent(idx) {
   const ev = {..._effCfg(idx)};
   const titleEl = document.getElementById('ev-title');
   const dateEl  = document.getElementById('ev-date');
@@ -703,9 +711,24 @@ function showEvent(idx) {
   roleEl.textContent  = ev.role; roleEl.dataset.ekey  = 'ev-'+idx+'-role';
   document.getElementById('pg-event').dataset.evIdx = String(idx);
   _renderEventPhotos(idx);
+}
+function showEvent(idx) {
+  _populateEvent(idx);
   showPage('event');
   if (_editMode) _applyEditable();
 }
+window.addEventListener('popstate', function(e) {
+  const st = e.state;
+  const page = (st && st.tlp) ? st.page : 'gallery';
+  if (page === 'event' && st && typeof st.idx === 'number' && st.idx >= 0) {
+    _populateEvent(st.idx);
+    showPage('event', true);
+    if (_editMode) _applyEditable();
+  } else {
+    showPage(page, true);
+  }
+});
+try { history.replaceState({tlp:true, page:'gallery', idx:null}, ''); } catch(_e) {}
 function handleForm(e) {
   e.preventDefault();
   document.getElementById('contact-form').style.display = 'none';
