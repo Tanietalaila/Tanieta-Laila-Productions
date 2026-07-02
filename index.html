@@ -39,7 +39,7 @@ img{display:block;max-width:100%}
 .gallery-item{aspect-ratio:2/3;position:relative;overflow:hidden}
 .gallery-item img{width:100%;height:100%;object-fit:cover;transition:filter .5s ease,opacity .5s ease,transform .55s ease}
 .gallery-item:hover img{filter:grayscale(100%);opacity:.38;transform:scale(1.04)}
-.g-overlay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2rem 1.4rem;opacity:0;transition:opacity .45s ease;pointer-events:none;background:rgba(255,255,255,.20);width:82%;text-align:center}
+.g-overlay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.2rem 1.4rem;opacity:0;transition:opacity .45s ease;pointer-events:none;background:rgba(255,255,255,.50);width:82%;text-align:center}
 .gallery-item:hover .g-overlay{opacity:1;pointer-events:auto}
 .ov-name{font-family:'Cormorant SC',serif;font-weight:600;font-size:.72rem;letter-spacing:.22em;color:#1C1208;text-transform:uppercase;text-align:center;margin-bottom:.55rem}
 .ov-line{width:1.8rem;height:1px;background:rgba(28,18,8,.2);margin-bottom:.55rem}
@@ -140,7 +140,7 @@ img{display:block;max-width:100%}
   .gallery-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
   .gallery-section { padding: 1.5rem 1rem 2rem; }
   .gallery-item:hover img { filter: none !important; opacity: 1 !important; transform: none !important; }
-  .gallery-item .g-overlay { opacity: 1 !important; pointer-events: none !important; padding: 0.7rem 0.8rem; width: 80%; background: rgba(255,255,255,.20) !important; }
+  .gallery-item .g-overlay { opacity: 1 !important; pointer-events: none !important; padding: 0.7rem 0.8rem; width: 80%; background: rgba(255,255,255,.50) !important; }
   .gallery-item .ov-line, .gallery-item .ov-meta, .gallery-item .ov-btn { display: none; }
   .gallery-item .ov-name { margin-bottom: 0; font-size: 0.5rem; }
 }
@@ -172,6 +172,7 @@ img{display:block;max-width:100%}
     </a>
     <a class="nav-web" href="https://tanietalaila.com" target="_blank" rel="noopener">tanietalaila.com</a>
     <a id="lnk-portfolio" class="active" style="font-family:'Courier Prime',monospace;font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:#1C1208;cursor:pointer;padding-bottom:2px;border-bottom:1px solid #1C1208;text-decoration:none" onclick="showPage('gallery')">Portfolio</a>
+    <a id="lnk-contact" style="font-family:'Courier Prime',monospace;font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:#1C1208;cursor:pointer;padding-bottom:2px;border-bottom:1px solid transparent;text-decoration:none" onclick="showPage('contact')">Contact</a>
     <button id="edit-toggle" onclick="toggleEditMode()">✎ Edit</button>
     <button id="export-btn" onclick="exportSite()" title="Download a shareable copy with all photos embedded">⇩ Export</button>
   </div>
