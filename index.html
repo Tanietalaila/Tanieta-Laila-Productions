@@ -115,7 +115,11 @@ img{display:block;max-width:100%}
 .cl-script{display:block;font-family:'Cormorant SC',serif;font-weight:300;font-size:3rem;letter-spacing:.18em;color:#1C1208;line-height:1.2;margin-top:.35rem;margin-bottom:1.2rem;text-transform:uppercase}
 .cl-desc{font-family:'Cormorant Garamond',serif;font-weight:300;font-style:italic;font-size:1rem;color:rgba(28,18,8,.6);line-height:1.85;margin-bottom:2.5rem;max-width:340px}
 .contact-r{display:none}
-.show-form .contact-r{display:block !important;padding:2rem 1.5rem}
+.show-form .contact-r{display:block !important;padding:3rem 1.5rem}
+@media (min-width:900px){
+  .show-form .contact-layout{grid-template-columns:1fr 1fr}
+  .show-form .contact-r{display:flex !important;flex-direction:column;justify-content:center;padding:5rem 4rem}
+}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1.8rem}
 .fg{display:flex;flex-direction:column;margin-bottom:1.8rem}
 .fl{font-family:'Courier Prime',monospace;font-size:.5rem;letter-spacing:.25em;text-transform:uppercase;color:rgba(28,18,8,.42);margin-bottom:.5rem}
@@ -230,7 +234,7 @@ img{display:block;max-width:100%}
       <p class="cl-desc" data-ekey="cl-desc">Bespoke tablescapes and event production for brands and private clients who believe the table is a work of art.</p>
       <div>
         <div class="ci"><span class="ci-label">Phone</span><span class="ci-val" data-ekey="ci-phone">07780 378049</span></div>
-        <div class="ci"><span class="ci-label">Email</span><span class="ci-val" data-ekey="ci-email">Ctanieta@icloud.com</span></div>
+        <div class="ci"><span class="ci-label">Email</span><span class="ci-val" data-ekey="ci-email">ctanieta@icloud.com</span></div>
         <div class="ci"><span class="ci-label">Instagram</span><span class="ci-val" data-ekey="ci-ig">@tanieta.laila</span></div>
         <div class="ci"><span class="ci-label">Website</span><span class="ci-val" data-ekey="ci-web">tanietalaila.com</span></div>
         <div class="ci"><span class="ci-label">Based In</span><span class="ci-val" data-ekey="ci-loc">London, UK</span></div>
