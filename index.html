@@ -115,6 +115,7 @@ img{display:block;max-width:100%}
 .cl-script{display:block;font-family:'Cormorant SC',serif;font-weight:300;font-size:3rem;letter-spacing:.18em;color:#1C1208;line-height:1.2;margin-top:.35rem;margin-bottom:1.2rem;text-transform:uppercase}
 .cl-desc{font-family:'Cormorant Garamond',serif;font-weight:300;font-style:italic;font-size:1rem;color:rgba(28,18,8,.6);line-height:1.85;margin-bottom:2.5rem;max-width:340px}
 .contact-r{display:none}
+.show-form .contact-r{display:block !important;padding:2rem 1.5rem}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1.8rem}
 .fg{display:flex;flex-direction:column;margin-bottom:1.8rem}
 .fl{font-family:'Courier Prime',monospace;font-size:.5rem;letter-spacing:.25em;text-transform:uppercase;color:rgba(28,18,8,.42);margin-bottom:.5rem}
@@ -238,14 +239,14 @@ img{display:block;max-width:100%}
     <div class="contact-r">
       <form id="contact-form" onsubmit="handleForm(event)">
         <div class="form-row" style="margin-bottom:0">
-          <div class="fg"><label class="fl">First Name</label><input class="fi" type="text" required=""></div>
-          <div class="fg"><label class="fl">Last Name</label><input class="fi" type="text" required=""></div>
+          <div class="fg"><label class="fl">First Name</label><input class="fi" type="text" name="first_name" required=""></div>
+          <div class="fg"><label class="fl">Last Name</label><input class="fi" type="text" name="last_name" required=""></div>
         </div>
-        <div class="fg"><label class="fl">Email</label><input class="fi" type="email" required=""></div>
-        <div class="fg"><label class="fl">Brand / Organisation</label><input class="fi" type="text"></div>
+        <div class="fg"><label class="fl">Email</label><input class="fi" type="email" name="email" required=""></div>
+        <div class="fg"><label class="fl">Brand / Organisation</label><input class="fi" type="text" name="brand"></div>
         <div class="fg">
           <label class="fl">Event Type</label>
-          <select class="fs">
+          <select class="fs" name="event_type">
             <option value="" disabled="" selected="">Select...</option>
             <option>Brand Activation</option>
             <option>Private Dinner</option>
@@ -255,9 +256,11 @@ img{display:block;max-width:100%}
             <option>Other</option>
           </select>
         </div>
-        <div class="fg"><label class="fl">Approximate Date</label><input class="fi" type="text" placeholder="e.g. September 2025"></div>
-        <div class="fg"><label class="fl">Message / Vision</label><textarea class="ft" rows="4" placeholder="Tell us about your vision..."></textarea></div>
+        <div class="fg"><label class="fl">Approximate Date</label><input class="fi" type="text" name="approximate_date" placeholder="e.g. September 2025"></div>
+        <div class="fg"><label class="fl">Message / Vision</label><textarea class="ft" rows="4" name="message" placeholder="Tell us about your vision..."></textarea></div>
+        <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
         <button class="fsub" type="submit">Send Enquiry →</button>
+        <p id="form-error" style="display:none;margin-top:1rem;font-size:.85rem;line-height:1.5"></p>
       </form>
       <div class="form-success" id="form-success">
         <span class="fs-ty">Thank you</span>
@@ -275,6 +278,8 @@ img{display:block;max-width:100%}
 // ── Published-mode bootstrap (added by export system) ────────────────────
 const _PRISTINE_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 const _PUBLISHED = !!window.__PUBLISHED_DATA__;
+// Private test link: add ?form=1 to the address to reveal the enquiry form
+if (/[?&]form=1\b/.test(location.search)) document.body.classList.add('show-form');
 // ================================================================
 //  EDIT EVENT NAMES, DATES & ROLES HERE
 //  (To edit on GitHub: pencil icon → Ctrl+F 'EDIT EVENT NAMES')
@@ -768,10 +773,40 @@ window.addEventListener('popstate', function(e) {
   }
 });
 try { history.replaceState({tlp:true, page:'gallery', idx:null}, ''); } catch(_e) {}
+const ENQUIRY_EMAIL = 'ctanieta@icloud.com';
 function handleForm(e) {
   e.preventDefault();
-  document.getElementById('contact-form').style.display = 'none';
-  document.getElementById('form-success').style.display = 'block';
+  const form = document.getElementById('contact-form');
+  const btn = form.querySelector('.fsub');
+  const err = document.getElementById('form-error');
+  const d = Object.fromEntries(new FormData(form).entries());
+  if (d._honey) return; // spam trap
+  const fullName = ((d.first_name || '') + ' ' + (d.last_name || '')).trim();
+  const lines = [
+    'Name: ' + fullName, 'Email: ' + (d.email || ''), 'Brand / organisation: ' + (d.brand || ''),
+    'Event type: ' + (d.event_type || ''), 'Approximate date: ' + (d.approximate_date || ''), '', (d.message || '')
+  ];
+  const label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Sending…'; err.style.display = 'none';
+  fetch('https://formsubmit.co/ajax/' + ENQUIRY_EMAIL, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+    body: JSON.stringify({
+      name: fullName, email: d.email, brand: d.brand, event_type: d.event_type,
+      approximate_date: d.approximate_date, message: d.message,
+      _subject: 'New website enquiry from ' + fullName, _template: 'table', _captcha: 'false'
+    })
+  }).then(r => r.json().catch(() => ({})).then(j => {
+    if (!r.ok || String(j.success) !== 'true') throw new Error('send failed');
+    form.style.display = 'none';
+    document.getElementById('form-success').style.display = 'block';
+  })).catch(() => {
+    // Never lose an enquiry: fall back to the visitor's own email app
+    btn.disabled = false; btn.textContent = label;
+    err.style.display = 'block';
+    err.innerHTML = 'Sorry, that didn\u2019t send. Please email <a href="mailto:' + ENQUIRY_EMAIL + '">' + ENQUIRY_EMAIL + '</a> directly.';
+    window.location.href = 'mailto:' + ENQUIRY_EMAIL + '?subject=' + encodeURIComponent('Website enquiry from ' + fullName) + '&body=' + encodeURIComponent(lines.join('\n'));
+  });
 }
 
 // ── Export: produce a ZIP with slim HTML + separate image files ──────────
